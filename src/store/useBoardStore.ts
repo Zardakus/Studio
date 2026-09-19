@@ -46,10 +46,17 @@ export type FileNode = {
 
 type AppNode = Node<AppNodeData>;
 
+export type BoardView = {
+  id: string;
+  name: string;
+  viewport: { x: number; y: number; zoom: number };
+};
+
 interface BoardState {
   nodes: AppNode[];
   edges: Edge[];
   fileSystem: FileNode[];
+  views: BoardView[];
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
@@ -57,6 +64,8 @@ interface BoardState {
   updateNodeData: (id: string, data: Partial<AppNodeData>) => void;
   addFileSystemNode: (parentId: string | null, newNode: FileNode) => void;
   removeFileSystemNode: (id: string) => void;
+  addView: (view: BoardView) => void;
+  removeView: (id: string) => void;
 }
 
 export const useBoardStore = create<BoardState>()(
@@ -74,6 +83,7 @@ export const useBoardStore = create<BoardState>()(
       fileSystem: [
         { id: 'root', name: 'Campaign Root', type: 'folder', children: [] }
       ],
+      views: [],
 
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -145,6 +155,14 @@ export const useBoardStore = create<BoardState>()(
           };
           return { fileSystem: removeNode(state.fileSystem) };
         });
+      },
+
+      addView: (view: BoardView) => {
+        set((state) => ({ views: [...state.views, view] }));
+      },
+
+      removeView: (id: string) => {
+        set((state) => ({ views: state.views.filter(v => v.id !== id) }));
       },
     }),
     {

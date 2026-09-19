@@ -6,6 +6,7 @@ import { useBoardStore } from '../store/useBoardStore';
 import { CustomNode } from './CustomNode';
 import { ImageNode } from './ImageNode';
 import { RichTextEditor } from './RichTextEditor';
+import { BoardViewsPanel } from './BoardViewsPanel';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -110,6 +111,7 @@ export function Board() {
       >
         <Background className="bg-zinc-100 dark:bg-zinc-900" color="#52525b" gap={24} size={2} />
         <Controls className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 shadow-md" />
+        <BoardViewsPanel />
       </ReactFlow>
 
       {/* Rich Editor Modal */}
