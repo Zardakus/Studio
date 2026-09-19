@@ -52,11 +52,18 @@ export type BoardView = {
   viewport: { x: number; y: number; zoom: number };
 };
 
+export type BoardSettings = {
+  gridType: 'dots' | 'lines' | 'cross';
+  gridColor: string;
+  snapToGrid: boolean;
+};
+
 interface BoardState {
   nodes: AppNode[];
   edges: Edge[];
   fileSystem: FileNode[];
   views: BoardView[];
+  settings: BoardSettings;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
@@ -66,6 +73,7 @@ interface BoardState {
   removeFileSystemNode: (id: string) => void;
   addView: (view: BoardView) => void;
   removeView: (id: string) => void;
+  updateSettings: (settings: Partial<BoardSettings>) => void;
 }
 
 export const useBoardStore = create<BoardState>()(
@@ -84,6 +92,11 @@ export const useBoardStore = create<BoardState>()(
         { id: 'root', name: 'Campaign Root', type: 'folder', children: [] }
       ],
       views: [],
+      settings: {
+        gridType: 'dots',
+        gridColor: '#52525b',
+        snapToGrid: false,
+      },
 
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -163,6 +176,10 @@ export const useBoardStore = create<BoardState>()(
 
       removeView: (id: string) => {
         set((state) => ({ views: state.views.filter(v => v.id !== id) }));
+      },
+
+      updateSettings: (newSettings: Partial<BoardSettings>) => {
+        set((state) => ({ settings: { ...state.settings, ...newSettings } }));
       },
     }),
     {

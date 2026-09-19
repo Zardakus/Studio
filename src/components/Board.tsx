@@ -7,6 +7,7 @@ import { CustomNode } from './CustomNode';
 import { ImageNode } from './ImageNode';
 import { RichTextEditor } from './RichTextEditor';
 import { BoardViewsPanel } from './BoardViewsPanel';
+import { BoardSettingsPanel } from './BoardSettingsPanel';
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -14,7 +15,7 @@ const nodeTypes = {
 };
 
 export function Board() {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode } = useBoardStore();
+  const { nodes, edges, settings, onNodesChange, onEdgesChange, onConnect, addNode } = useBoardStore();
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
@@ -31,18 +32,27 @@ export function Board() {
       const x = e.clientX - bounds.left;
       const y = e.clientY - bounds.top;
 
+      // Handle image file drop
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        return;
+      }
+
       const newNodeId = Date.now().toString();
+      let pos = { x, y };
+      if (settings.snapToGrid) {
+        pos = { x: Math.round(x / 24) * 24, y: Math.round(y / 24) * 24 };
+      }
+
       addNode({
         id: newNodeId,
         type: 'customNode',
-        position: { x, y },
+        position: pos,
         data: { title: 'New Note', content: '' },
       });
       
-      // Auto-open editor for new node
       setActiveNodeId(newNodeId);
     },
-    [addNode]
+    [addNode, settings.snapToGrid]
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -56,8 +66,13 @@ export function Board() {
       if (!reactFlowWrapper.current) return;
 
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const x = e.clientX - bounds.left;
-      const y = e.clientY - bounds.top;
+      let x = e.clientX - bounds.left;
+      let y = e.clientY - bounds.top;
+
+      if (settings.snapToGrid) {
+        x = Math.round(x / 24) * 24;
+        y = Math.round(y / 24) * 24;
+      }
 
       // Handle image file drop
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -91,7 +106,7 @@ export function Board() {
         data: fileNode.data || { title: fileNode.name, content: '' },
       });
     },
-    [addNode]
+    [addNode, settings.snapToGrid]
   );
 
   return (
@@ -107,11 +122,20 @@ export function Board() {
         onDragOver={onDragOver}
         onDrop={onDrop}
         nodeTypes={nodeTypes}
+        snapToGrid={settings.snapToGrid}
+        snapGrid={[24, 24]}
         fitView
       >
-        <Background className="bg-zinc-100 dark:bg-zinc-900" color="#52525b" gap={24} size={2} />
+        <Background 
+          className="bg-zinc-100 dark:bg-zinc-900" 
+          color={settings.gridColor} 
+          variant={settings.gridType as any}
+          gap={24} 
+          size={2} 
+        />
         <Controls className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 shadow-md" />
         <BoardViewsPanel />
+        <BoardSettingsPanel />
       </ReactFlow>
 
       {/* Rich Editor Modal */}
