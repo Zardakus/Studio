@@ -4,10 +4,12 @@ import 'reactflow/dist/style.css';
 
 import { useBoardStore } from '../store/useBoardStore';
 import { CustomNode } from './CustomNode';
+import { ImageNode } from './ImageNode';
 import { RichTextEditor } from './RichTextEditor';
 
 const nodeTypes = {
   customNode: CustomNode,
+  imageNode: ImageNode,
 };
 
 export function Board() {
@@ -52,14 +54,34 @@ export function Board() {
       e.preventDefault();
       if (!reactFlowWrapper.current) return;
 
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
+
+      // Handle image file drop
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64Url = event.target?.result as string;
+            addNode({
+              id: Date.now().toString(),
+              type: 'imageNode',
+              position: { x, y },
+              data: { title: file.name, content: '', imageUrl: base64Url },
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+        return;
+      }
+
+      // Handle sidebar tree drop
       const rawData = e.dataTransfer.getData('application/reactflow-node');
       if (!rawData) return;
       
       const fileNode = JSON.parse(rawData);
-      
-      const bounds = reactFlowWrapper.current.getBoundingClientRect();
-      const x = e.clientX - bounds.left;
-      const y = e.clientY - bounds.top;
 
       addNode({
         id: Date.now().toString(),

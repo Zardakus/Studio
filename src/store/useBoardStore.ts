@@ -33,6 +33,7 @@ const storage: StateStorage = {
 export type AppNodeData = {
   title: string;
   content: string; // HTML content from TipTap
+  imageUrl?: string; // Base64 data URL for images
 };
 
 export type FileNode = {
