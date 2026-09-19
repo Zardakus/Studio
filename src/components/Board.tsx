@@ -42,8 +42,37 @@ export function Board() {
     [addNode]
   );
 
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!reactFlowWrapper.current) return;
+
+      const rawData = e.dataTransfer.getData('application/reactflow-node');
+      if (!rawData) return;
+      
+      const fileNode = JSON.parse(rawData);
+      
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
+
+      addNode({
+        id: Date.now().toString(),
+        type: 'customNode',
+        position: { x, y },
+        data: fileNode.data || { title: fileNode.name, content: '' },
+      });
+    },
+    [addNode]
+  );
+
   return (
-    <div className="w-screen h-screen flex bg-zinc-50 dark:bg-zinc-950" ref={reactFlowWrapper}>
+    <div className="w-full h-full flex bg-zinc-50 dark:bg-zinc-950" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -52,6 +81,8 @@ export function Board() {
         onConnect={onConnect}
         onNodeDoubleClick={onNodeDoubleClick}
         onPaneContextMenu={onPaneContextMenu}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         nodeTypes={nodeTypes}
         fitView
       >

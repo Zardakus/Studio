@@ -35,16 +35,27 @@ export type AppNodeData = {
   content: string; // HTML content from TipTap
 };
 
+export type FileNode = {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  children?: FileNode[];
+  data?: AppNodeData; // For files, to store content
+};
+
 type AppNode = Node<AppNodeData>;
 
 interface BoardState {
   nodes: AppNode[];
   edges: Edge[];
+  fileSystem: FileNode[];
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
   addNode: (node: AppNode) => void;
   updateNodeData: (id: string, data: Partial<AppNodeData>) => void;
+  addFileSystemNode: (parentId: string | null, newNode: FileNode) => void;
+  removeFileSystemNode: (id: string) => void;
 }
 
 export const useBoardStore = create<BoardState>()(
@@ -59,6 +70,9 @@ export const useBoardStore = create<BoardState>()(
         },
       ],
       edges: [],
+      fileSystem: [
+        { id: 'root', name: 'Campaign Root', type: 'folder', children: [] }
+      ],
 
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -95,6 +109,40 @@ export const useBoardStore = create<BoardState>()(
             }
             return node;
           }),
+        });
+      },
+
+      addFileSystemNode: (parentId: string | null, newNode: FileNode) => {
+        set((state) => {
+          if (!parentId) {
+            return { fileSystem: [...state.fileSystem, newNode] };
+          }
+          
+          const addChild = (nodes: FileNode[]): FileNode[] => {
+            return nodes.map((n) => {
+              if (n.id === parentId) {
+                return { ...n, children: [...(n.children || []), newNode] };
+              }
+              if (n.children) {
+                return { ...n, children: addChild(n.children) };
+              }
+              return n;
+            });
+          };
+
+          return { fileSystem: addChild(state.fileSystem) };
+        });
+      },
+
+      removeFileSystemNode: (id: string) => {
+        set((state) => {
+          const removeNode = (nodes: FileNode[]): FileNode[] => {
+            return nodes.filter(n => n.id !== id).map(n => {
+              if (n.children) return { ...n, children: removeNode(n.children) };
+              return n;
+            });
+          };
+          return { fileSystem: removeNode(state.fileSystem) };
         });
       },
     }),
